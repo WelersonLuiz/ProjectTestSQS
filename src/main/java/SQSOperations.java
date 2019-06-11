@@ -20,8 +20,8 @@ public class SQSOperations {
     SQSOperations(){}   // Construtor
 
     BasicAWSCredentials awsCreds = new BasicAWSCredentials(         // Declarando credenciais
-            "AKIA4QQ35UGTAZR5UC3R",
-            "A1ze2ujE3W08sAh52y5VhHMKsSM5wNXXo14HCR/v"
+            "ID_CHAVE_ACESSO",
+            "SENHA_CHAVE_ACESSO"
     );
     final AmazonSQS sqsBuilder = AmazonSQSClientBuilder.standard()  // Declarando o builder do cliente, para acessar o AWS
             .withRegion(Regions.SA_EAST_1)                                      // Configurando região
@@ -36,10 +36,10 @@ public class SQSOperations {
         ClientConfiguration cli_config = new ClientConfiguration();
 
         // Setando configurações de proxy
-        cli_config.setProxyHost("proxylatam.indra.es");
+        cli_config.setProxyHost("proxy_address");
         cli_config.setProxyPort(8080);
-        cli_config.setProxyUsername("wlpawlak");
-        cli_config.setProxyPassword("W30yg22l");
+        cli_config.setProxyUsername("usuário");
+        cli_config.setProxyPassword("senha");
 
         return cli_config;
     }
