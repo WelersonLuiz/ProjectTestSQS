@@ -3,6 +3,9 @@ import com.amazonaws.ClientConfiguration;
 
 import static org.junit.Assert.*;
 
+import com.amazonaws.util.json.JSONException;
+import com.amazonaws.util.json.JSONObject;
+import netscape.javascript.JSObject;
 import org.junit.Test;
 
 import javax.jms.JMSException;
@@ -16,16 +19,14 @@ public class SQSOperationsTest {
     AmazonSQSMessagingClientWrapper client = operations.newConnection().getWrappedAmazonSQSClient();
 
     @Test
-    public void cliConfig() {
+    public void proxyConfig() {
 
-        ClientConfiguration cliMetodo = operations.clientConfig();          // Resultado do método
+        ClientConfiguration cliMetodo = operations.proxyConfig();           // Resultado do método
         ClientConfiguration cliExpected = new ClientConfiguration();        // Resultado esperado
 
         // Setando resultado esperado
         cliExpected.setProxyHost("proxylatam.indra.es");
         cliExpected.setProxyPort(8080);
-        cliExpected.setProxyUsername("wlpawlak");
-        cliExpected.setProxyPassword("W30yg22l");
 
         assertThat(cliMetodo.getProxyHost(), equalTo(cliExpected.getProxyHost()));
         assertThat(cliMetodo.getProxyPort(), equalTo(cliExpected.getProxyPort()));
@@ -45,26 +46,29 @@ public class SQSOperationsTest {
     }
 
     @Test
-    public void criarFilaSQS() {
+    public void criarFilaFifoSQS() {
 
-        String myQueue = "FilaExemplo.fifo";                 // Nome da fila de teste
-        String resultado = operations.criarFilaSQS(myQueue);    // Executando método de criação
+        String myQueue = "CriarFila.fifo";
 
         try {
+            // Executando método de criação
+            String resultado = new JSONObject(operations.criarFilaFifoSQS(myQueue)).getString("QueueUrl");
             String expected = client.getQueueUrl(myQueue).toString();
             assertEquals(expected, resultado);
-            operations.deletarFilaSQS(myQueue);    // Deletando fila exemplo
         }catch (JMSException e){
+            System.out.println(e);
+        }catch (JSONException e){
             System.out.println(e);
         }
 
+        operations.deletarFilaSQS(myQueue);
     }
 
     @Test
     public void criarFilaSQSExistente(){
 
-        operations.criarFilaSQS("FilaTesteCriarRepetido.fifo");                      // Executando método e criando fila exemplo
-        String result = operations.criarFilaSQS("FilaTesteCriarRepetido.fifo");      // Guardando return da segunda execução
+        operations.criarFilaFifoSQS("FilaTesteCriarRepetido.fifo");                      // Executando método e criando fila exemplo
+        String result = operations.criarFilaFifoSQS("FilaTesteCriarRepetido.fifo");      // Guardando return da segunda execução
 
         assertNull(result);
 
@@ -74,8 +78,8 @@ public class SQSOperationsTest {
     @Test
     public void deletarFilaSQS() {
 
-        String myQueue = "FilaExemplo.fifo";
-        operations.criarFilaSQS(myQueue);                  // Criando fila exemplo para ser deletada
+        String myQueue = "FilaExemplo2.fifo";
+        operations.criarFilaFifoSQS(myQueue);                  // Criando fila exemplo para ser deletada
 
         String expected = "Fila "+myQueue+" deletada";
         String result = operations.deletarFilaSQS(myQueue);

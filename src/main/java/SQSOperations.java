@@ -15,87 +15,116 @@ import javax.jms.JMSException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class SQSOperations {
-    SQSOperations(){}   // Construtor
+    SQSOperations(){}
 
-    BasicAWSCredentials awsCreds = new BasicAWSCredentials(         // Declarando credenciais
-            "AKIA4QQ35UGTAZR5UC3R",
-            "A1ze2ujE3W08sAh52y5VhHMKsSM5wNXXo14HCR/v"
+    // Declarando credenciais
+    private BasicAWSCredentials awsCreds = new BasicAWSCredentials(
+            "AKIA4QQ35UGTCW6QFPUG",
+            "Wp3TTbBRtufBiQFbJa4nAnmdL6kFTOAnBL0Fga9Q"
     );
-    final AmazonSQS sqsBuilder = AmazonSQSClientBuilder.standard()  // Declarando o builder do cliente, para acessar o AWS
-            .withRegion(Regions.SA_EAST_1)                                      // Configurando região
+
+
+
+    // Declarando o builder do cliente, para acessar o AWS
+    private AmazonSQS client = AmazonSQSClientBuilder.standard()
+            .withRegion(Regions.US_EAST_2)                                      // Configurando região
             .withCredentials(new AWSStaticCredentialsProvider(awsCreds))        // Configurando credenciais
-            .withClientConfiguration(clientConfig())                            // Configurando o cliente (proxy), com o método clientConfiguration
+            .withClientConfiguration(proxyConfig())                             // Configurando o cliente (proxy), com o método clientConfiguration
             .build();
 
+    // Obtem o client para o SQS
+    private AmazonSQSMessagingClientWrapper connection = newConnection()
+            .getWrappedAmazonSQSClient();
+
+
+
     // Método para configurações do client
-    public ClientConfiguration clientConfig (){
+    public ClientConfiguration proxyConfig (){
 
-        // Variável com as configurações do cliente
         ClientConfiguration cli_config = new ClientConfiguration();
-
-        // Setando configurações de proxy
         cli_config.setProxyHost("proxylatam.indra.es");
         cli_config.setProxyPort(8080);
-        cli_config.setProxyUsername("wlpawlak");
-        cli_config.setProxyPassword("W30yg22l");
 
         return cli_config;
     }
 
+
+
     // Método do para criar conexão
     public SQSConnection newConnection (){
         try {
-            return new SQSConnectionFactory(new ProviderConfiguration(), sqsBuilder).createConnection();    // Retorna nova conexão criada
+            // Cria nova conexão com o sqsBuilder
+            return new SQSConnectionFactory(
+                    new ProviderConfiguration(), client
+            ).createConnection();
         }catch (JMSException e){
-            return null;    // Retorna nulo caso não tenha sido possivel criar a conexão
+            return null;
         }
     }
 
-    // Método para criar uma nova fila
-    public String criarFilaSQS(String queueName){
-        try {
-            SQSConnection connection = newConnection();                                             // Cria conexão com o método newConnection
-            AmazonSQSMessagingClientWrapper client = newConnection().getWrappedAmazonSQSClient();   // Obtem wrapped client para o SQS
 
-            // Caso a fila não exista ela será criada
-            if (!client.queueExists(queueName)) {
+
+    // Método que retorna as listas existentes
+    public ArrayList<String> getListQueueURL(){
+
+        ArrayList<String> list = new ArrayList<String>();
+
+        System.out.println("\nLista de filas na sua conta:\n");
+        for (final String queueUrl : client.listQueues().getQueueUrls()) {
+            System.out.println("Url: " + queueUrl);
+            list.add(queueUrl);
+        }
+        return list;
+    }
+
+
+
+    // Método para criar uma nova fila
+    public String criarFilaFifoSQS(String queueName){
+        try {
+
+            if (!connection.queueExists(queueName)) {                                       // Caso a fila não exista ela será criada
 
                 final Map<String, String> attributes = new HashMap<String, String>();   // Variável para os atributos da fila
                 attributes.put("FifoQueue", "true");                                    // Define a fila do tipo FIFO
                 attributes.put("ContentBasedDeduplication", "true");                    // Define eliminação de duplicatas
 
-                // Request de criação de fila com os atributos escolhidos
-                final CreateQueueRequest createQueueRequest = new CreateQueueRequest(queueName).withAttributes(attributes);
-                final String myQueueUrl = client.createQueue(createQueueRequest).getQueueUrl(); // Obtendo url da fila criada
+                final CreateQueueRequest createQueueRequest = new CreateQueueRequest(queueName)
+                        .withAttributes(attributes);    // Request de criação de fila
+
+                final String myQueueUrl = connection
+                        .createQueue(createQueueRequest)
+                        .getQueueUrl();                 // Obtendo url da fila criada
 
                 System.out.println("\nNova Fila: " + queueName + "\nURL: " + myQueueUrl);
 
-                return client.getQueueUrl(myQueueUrl).toString();
-            }else {
+                return myQueueUrl;
+
+            }else{
                 System.out.println("\nA fila "+ queueName + " já foi criada.");
                 return null;
             }
         }catch (JMSException e) {
-            System.out.println("JSMException");
+            System.out.println(e);
         }
         return null;
     }
 
+
+
     // Método que exclui uma fila
     public String deletarFilaSQS(String queueName){
         try {
-            SQSConnection connection = newConnection();                                             // Cria conexão com o método newConnection
-            AmazonSQSMessagingClientWrapper client = newConnection().getWrappedAmazonSQSClient();   // Obtem wrapped client para o SQS
+            // Caso a fila exista ela será deletada
+            if (connection.queueExists(queueName)) {
 
-            // Caso a fila não exista ela será criada
-            if (client.queueExists(queueName)) {
-
-                String myQueueUrl = client.getQueueUrl(queueName).getQueueUrl();   // Obtendo url da fila
+                String myQueueUrl = connection.getQueueUrl(queueName).getQueueUrl();   // Obtendo url da fila
 
                 System.out.println("Deleting the test queue.\n");
-                sqsBuilder.deleteQueue(new DeleteQueueRequest(myQueueUrl));
+                client.deleteQueue(new DeleteQueueRequest(myQueueUrl));
 
                 return "Fila "+ queueName + " deletada";
             }else {
@@ -107,17 +136,5 @@ public class SQSOperations {
         return null;
     }
 
-    // Método que retorna as listas existentes
-    public ArrayList<String> getListQueueURL(){
-
-        ArrayList<String> list = new ArrayList<String>();
-
-        System.out.println("\nLista de filas na sua conta:\n");
-        for (final String queueUrl : sqsBuilder.listQueues().getQueueUrls()) {
-            System.out.println("Url: " + queueUrl);
-            list.add(queueUrl);
-        }
-        return list;
-    }
 
 }
