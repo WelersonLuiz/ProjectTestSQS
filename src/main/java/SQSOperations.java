@@ -15,15 +15,14 @@ import javax.jms.JMSException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class SQSOperations {
     SQSOperations(){}
 
     // Declarando credenciais
     private BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            "AKIA4QQ35UGTCW6QFPUG",
-            "Wp3TTbBRtufBiQFbJa4nAnmdL6kFTOAnBL0Fga9Q"
+            "ID_CHAVE_ACESSO",
+            "SENHA_CHAVE_ACESSO"
     );
 
 
