@@ -4,8 +4,8 @@
 > Essa variável guarda as credenciais do usuário AWS
 
     private BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-        "AKIA4QQ35UGTCW6QFPUG",
-        "Wp3TTbBRtufBiQFbJa4nAnmdL6kFTOAnBL0Fga9Q"
+        "credential_id",
+        "credential_password"
     );
     
 #### Configuração de proxy
